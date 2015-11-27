@@ -64,7 +64,7 @@ class VisitedMap:
         return pos // self.side, pos % self.side
 
 
-class ModulusFibonacci:
+class ModuloFibonacci:
     def __init__(self, mod):
         self.mod = int(mod)
         if mod <= 0:
@@ -88,7 +88,7 @@ class ModulusFibonacci:
 
 
 def main(mf):
-    histogram = defaultdict(lambda: 0)
+    histogram = defaultdict(int)
     for initial, sequence in mf.run_through():
         colors(1, 35)
         numbers(initial[0])
@@ -98,7 +98,7 @@ def main(mf):
         print('')
         histogram[len(sequence)] += 1
     print('%d sequences.' % sum(histogram.values()))
-    print('; '.join(('%d of %d' % (b, a) for (a, b) in sorted(histogram.items()))))
+    print('; '.join(('%d of %d' % (amount, length) for (length, amount) in sorted(histogram.items()))))
 
 
 def colors(*codes):
@@ -120,4 +120,4 @@ if __name__ == '__main__':
     elif base > len(ALPHABET):
         print("Settle down! I can't represent more than %d digits." % len(ALPHABET))
     else:
-        main(ModulusFibonacci(base))
+        main(ModuloFibonacci(base))

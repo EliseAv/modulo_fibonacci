@@ -70,27 +70,30 @@ class Alphabet:
 class VisitedMap:
     def __init__(self, side: int):
         self.side = abs(side)
-        self.map = 0  # A very large bitmap
+        self.map = bytearray(math.ceil(side * side / 8))
 
     def __call__(self, n1: int, n2: int) -> bool:
         pos = n1 * self.side + n2
-        mask = 1 << pos
+        byte_pos = pos // 8
+        bit = 1 << (pos % 8)
         try:
-            return bool(self.map & mask)
+            return bool(self.map[byte_pos] & bit)
         finally:
-            self.map |= mask
+            self.map[byte_pos] |= bit
 
     def iterate_free_pairs(self) -> Iterable[Tuple[int, int]]:
-        mask = (1 << self.side * self.side) - 1
-        pos = 0
-        search = mask ^ self.map
-        while search:
-            while not search & 1:
-                search >>= 1
-                pos += 1
-            yield pos // self.side, pos % self.side
-            # Assume the map changed, so reload the search bitmap
-            search = (mask ^ self.map) >> pos
+        # index iteration to make sure iterator won't invalidate
+        for byte_pos in range(len(self.map)):
+            byte = self.map[byte_pos]
+            for bit_pos, bit in enumerate((1, 2, 4, 8, 16, 32, 64, 128)):
+                if byte & bit == 0:
+                    pos = byte_pos * 8 + bit_pos
+                    n1 = pos // self.side
+                    if n1 >= self.side:
+                        return
+                    n2 = pos % self.side
+                    yield n1, n2
+                    byte = self.map[byte_pos]  # reload byte
 
 
 def modulo_fibonacci(base: int) -> Iterable[List[int]]:

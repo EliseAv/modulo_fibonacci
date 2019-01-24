@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Copyright 2015, Ekevoo.com.
+# Copyright 2015-2019, Ekevoo.com.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -20,13 +20,15 @@ Modulo Fibonacci
 Usage: ``python modfibo.py [BASE]``
 E.g.:  ``python modfibo.py 16``
 
-So you know the Fibonacci sequence, right? It's 1 1 2 3 5 8 13 21 34 55 and so on. After going on the sequence for a
-while, I noticed that the least significant digit is a pretty long sequence that should eventually start repeating, but
-it was taking way too long. So I started analyzing that particular angle of the sequence (modulo 10); yes, on paper. For
-some strange reason I had so much fun with it that I started doing it for other bases: hex, oct, 7, 6, 5… And when I got
-home I wrote this little test app to explore bigger bases. Base 11 was really hard to do on paper.
+The Fibonacci sequence https://oeis.org/A000045 is 1 1 2 3 5 8 13 21 34 55 and so on.
 
-There is no purpose to this. It's just fun with numbers. Either you get it or you're not a nerd, and either way is fine.
+It's not hard to conclude that the sequence's least significant digit starts repeating after a while, but I was doing
+it on paper, and it was taking way too long. For some strange reason I had so much fun doing it manually, and ensuring
+all pairs were represented (i.e. adding the Lucas sequence, then starting at other previously-unseen pairs), that I
+started started doing it for other bases: hexadecimal, octal, 7, 6, 5… And when I got home that day I wrote this
+little test app to explore larger bases. Base 11 was really hard to find unseen starting pairs manually.
+
+There is no purpose to this. It's just fun with numbers.
 
 """
 import collections
@@ -40,8 +42,8 @@ import colorama
 
 
 class Alphabet:
-    # 82-symbol base alphabet so that 2-digit representations will use 0-9 at minimum
-    ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&?!|/*^+=~-_;:,.'
+    """ A visual representation of a modulo fibonacci base. """
+    ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz'
 
     def __init__(self, base: int):
         colorama.init()
@@ -53,8 +55,9 @@ class Alphabet:
         self.symbols: Sequence[str] = symbols[:base]
 
     def dump(self, runs: Iterable[List[int]]) -> None:
+        """ Prints a list of runs. Each run is assumed to represent a cycle. """
         for run in runs:
-            output = [colorama.Style.BRIGHT, colorama.Fore.MAGENTA, self.symbols[run[-1]]]
+            output = [colorama.Style.BRIGHT, colorama.Fore.MAGENTA, self.symbols[run.pop()]]
             if self.length == 1:
                 output.append(colorama.Fore.GREEN)
                 output.extend(self.symbols[i] for i in run)
@@ -68,11 +71,13 @@ class Alphabet:
 
 
 class VisitedMap:
+    """ A square bitmap represeting pairs. """
     def __init__(self, side: int):
         self.side = abs(side)
         self.map = bytearray(math.ceil(side * side / 8))
 
     def __call__(self, n1: int, n2: int) -> bool:
+        """ Visits a point, returns whether that was the first visit. """
         pos = n1 * self.side + n2
         byte_pos = pos // 8
         bit = 1 << (pos % 8)
@@ -82,6 +87,7 @@ class VisitedMap:
             self.map[byte_pos] |= bit
 
     def iterate_free_pairs(self) -> Iterable[Tuple[int, int]]:
+        """ Yield unvisited points. """
         # index iteration to make sure iterator won't invalidate
         for byte_pos in range(len(self.map)):
             byte = self.map[byte_pos]
@@ -90,7 +96,7 @@ class VisitedMap:
                     pos = byte_pos * 8 + bit_pos
                     n1 = pos // self.side
                     if n1 >= self.side:
-                        return
+                        return  # Oops, we're past the end
                     n2 = pos % self.side
                     yield n1, n2
                     byte = self.map[byte_pos]  # reload byte
